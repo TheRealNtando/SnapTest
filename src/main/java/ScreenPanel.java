@@ -1,12 +1,14 @@
 import java.awt.Graphics;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import javax.imageio.ImageIO;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import org.apache.poi.ss.usermodel.ClientAnchor;
@@ -23,6 +25,7 @@ import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
 
 
+@SuppressWarnings("serial")
 public class ScreenPanel extends JPanel implements NativeKeyListener{
 	
 	private ScreenCapture screenCapture = new ScreenCapture();
@@ -57,55 +60,69 @@ public class ScreenPanel extends JPanel implements NativeKeyListener{
 		else if(arg0.getKeyCode() == NativeKeyEvent.VC_ESCAPE){
 			System.out.println("Escape");
 			
-			Workbook workbook = new XSSFWorkbook();
-			Sheet sheet = workbook.createSheet("SnapTest");
-			int row=0;
-			
-			for(int i=1; i<screenCapture.size(); i++){
+			if(screenCapture.size() > 1) {
 				
-				File temp = new File("" + Integer.toString(i) + ".png");
+				JFileChooser fileChooser = new JFileChooser();
 				
-				try{
-					ImageIO.write(screenCapture.getImage(i), "png", temp);
+				if(fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+				
 					
-					InputStream inputstream = new FileInputStream(temp);
-					byte[] bytes = IOUtils.toByteArray(inputstream);
-					int pictureIdx = workbook.addPicture(bytes, Workbook.PICTURE_TYPE_PNG);
-					inputstream.close();
+					try {
+						
+						Workbook workBook = new XSSFWorkbook();
+						Sheet sheet = workBook.createSheet("SnapTest");
+						int row = 0;
+						
+						for(int i=1; i<screenCapture.size(); i++) {
+							
+							File temp = new File("" + Integer.toString(i) + ".png");
+							
+							ImageIO.write(screenCapture.getImage(i), "png", temp);
+							
+							InputStream inputstream = new FileInputStream(temp);
+							byte[] bytes = IOUtils.toByteArray(inputstream);
+							int pictureIdx = workBook.addPicture(bytes, Workbook.PICTURE_TYPE_PNG);
+							inputstream.close();
+							
+							//Returns an object that handles instantiating concrete classes
+							CreationHelper helper = workBook.getCreationHelper();
+							
+							//Creates the top-level drawing patriarch
+							@SuppressWarnings("rawtypes")
+							Drawing drawing  = sheet.createDrawingPatriarch();
+							
+							//Create an anchor that is attached to the worksheet
+							ClientAnchor anchor = helper.createClientAnchor();
+							anchor.setRow1(row*55);
+							anchor.setCol1(0);
+							
+							row++;
+							
+							//Creates a picture
+							Picture picture = drawing.createPicture(anchor, pictureIdx);
+							picture.resize();
+							
+							//Write out Excel file
+							FileOutputStream outputStream = new FileOutputStream(fileChooser.getSelectedFile().getAbsolutePath() + ".xlsx");
+							workBook.write(outputStream);
+							outputStream.close();
+							
+							temp.delete();
+						}
+						
+						workBook.close();
+						
+						JOptionPane.showMessageDialog(null, "Your test has been snapped.");
+					}
+					catch(FileNotFoundException exp) {}
+					catch(IOException exp) {}
 					
-					//Returns an object that handles instantiating concrete classes
-					CreationHelper helper = workbook.getCreationHelper();
-					
-					//Creates the top-level drawing patriarch
-					Drawing drawing  = sheet.createDrawingPatriarch();
-					
-					//Create an anchor that is attached to the worksheet
-					ClientAnchor anchor = helper.createClientAnchor();
-					anchor.setRow1(row*42);
-					anchor.setCol1(0);
-					
-					row++;
-					
-					//Creates a picture
-					Picture picture = drawing.createPicture(anchor, pictureIdx);
-					picture.resize();
-					
-					//Write out Excel file
-					FileOutputStream outputStream = null;
-					outputStream = new FileOutputStream("ScreenShot.xlsx");
-					workbook.write(outputStream);
-					outputStream.close();
-					
-					temp.delete();
+					//Delete images from app after saving screenshot
+					for(int i=0; i<screenCapture.size(); i++) {
+						screenCapture.delete();
+					}
 				}
-				catch(IOException exp){}
-				
 			}
-			
-			try{
-				workbook.close();
-			}
-			catch(IOException exp){}
 		}
 	}
 
@@ -119,4 +136,3 @@ public class ScreenPanel extends JPanel implements NativeKeyListener{
 		
 	}
 }
-

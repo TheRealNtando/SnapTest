@@ -1,6 +1,7 @@
 import javax.swing.JFrame;
 
 
+@SuppressWarnings("serial")
 public class ScreenFrame extends JFrame{
 
 	private ScreenPanel panel = new ScreenPanel();
