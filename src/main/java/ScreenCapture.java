@@ -1,52 +1,59 @@
-import java.awt.AWTException;
-import java.awt.Image;
-import java.awt.Rectangle;
-import java.awt.Robot;
-import java.awt.Toolkit;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
 
 public class ScreenCapture {
-	private ArrayList<BufferedImage> images = new ArrayList<BufferedImage>();
+
+	private final Logger log;
+	private final ArrayList<BufferedImage> images = new ArrayList<>();
 	
 	public ScreenCapture(){
-		
+
+		log = LogManager.getLogger(ScreenCapture.class);
 		try{
-			Image image = ImageIO.read(new File("SnapTest.png"));
-			BufferedImage buffered = (BufferedImage) image;
-			
-			images.add(buffered);
+			BufferedImage image = ImageIO.read(new File("SnapTest.png"));
+
+            images.add(image);
 		}
-		catch(IOException exp){}
+		catch(IOException exp){
+			log.error(exp.getMessage());
+		}
 	}
 	
-	public void capture(){
+	public void captureScreen(int monitorNumber){
 		try{
-			Robot robot = new Robot();
-			Rectangle rect = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
-			BufferedImage screenShot = robot.createScreenCapture(rect);
+			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+			GraphicsDevice[] monitors = ge.getScreenDevices();
+
+			Rectangle screenBounds = monitors[monitorNumber-1].getDefaultConfiguration().getBounds();
+			BufferedImage screenShot = new Robot().createScreenCapture(screenBounds);
 			images.add(screenShot);
 		}
-		catch(AWTException exp){}
+		catch(AWTException exp){
+			log.error(exp.getMessage());
+		}
 	}
 	
 	public void delete(){
 		if(images.size() > 1)
 			images.remove(images.size()-1);
 	}
-	
-	public ArrayList<BufferedImage> getScreenshots(){
+
+	public List<BufferedImage> getScreenshots(){
 		if(images.size()==1)
-			System.exit(0);	
+			System.exit(0);
 		return images;
-		
 	}
-	
+
 	public BufferedImage latestScreenShot(){
 		return images.get(images.size()-1);
 	}
