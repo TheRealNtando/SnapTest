@@ -1,16 +1,12 @@
-import javax.swing.JFrame;
+import javax.swing.*;
 
-
-@SuppressWarnings("serial")
 public class ScreenFrame extends JFrame{
 
-	private ScreenPanel panel = new ScreenPanel();
-	
 	public ScreenFrame(){
-		
-		add(panel);
+
+		add(new MainPanel());
 		setTitle("SnapTest");
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		setSize(500, 500);
 		setVisible(true);
 	}
